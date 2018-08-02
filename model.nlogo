@@ -1,21 +1,23 @@
 extensions [ gis ]
 globals [
-  dem-data ;Elevation
-  MBBR-data ;
-  ppt-data ;precipitation
+  slope-data ;Elevation
+  MBBR-data ;Monarch butterfly biosphere reserve areas
+  ppt-data ;Precipitation
   tem-data ;Average temperature
-  luc-data
+  luc-data ;Land-cover use
+  tenure-data ; Land tenure
 
 ]
 
 patches-own
 [
-  dem
+  slope-patch
   MBBR-patch
   ppt-patch
   luc-patch
   tem-patch
   w_attitude;  climatic attitude for avocado cultivation
+  tenure-patch;
 ]
 
 
@@ -28,16 +30,19 @@ to setup
 end
 
 to load-data
-  set dem-data gis:load-dataset "data/DEM.asc"
+  ;set dem-data gis:load-dataset "data/DEM.asc"
   set MBBR-data gis:load-dataset "data/MBBR_ZONES.asc"
   set ppt-data gis:load-dataset "data/ppt.asc"
   set tem-data gis:load-dataset "data/tem.asc"
   set luc-data gis:load-dataset "data/luc1.asc"
+  set slope-data gis:load-dataset "data/slope.asc"
+  set tenure-data gis:load-dataset "data/land_tenure.asc"
 
 
   ;gis:set-world-envelope-ds gis:envelope-of dem-data ;sets the envelope of the world to match that of the GIS dataset
   ;gis:set-world-envelope-ds gis:envelope-of ppt-data
-
+  gis:apply-raster tenure-data tenure-patch
+  gis:apply-raster slope-data slope-patch
   gis:apply-raster MBBR-data MBBR-patch
   gis:apply-raster ppt-data ppt-patch
   gis:apply-raster tem-data tem-patch
@@ -64,10 +69,26 @@ to view_bmmr
 end
 to go
   ;Growing avocado orchards
-  change1
-  ;print count patches with [pcolor = 26]
-end
+  if not Payment_es and not Payment_ag_s[ change1
+    print "Scenario 1"
+     ;if not any? patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and slope-patch < 70]
+    if ticks > 30
+    [stop]
+  ]
+  if Payment_es and not Payment_ag_s [ change2
+    print "Scenario 2"
+    if ticks > 30
+    [stop]
+  ]
+  if Payment_ag_s and not Payment_es [ change3
+    if ticks > 30
+    [stop]
+  ]
 
+  if  Payment_ag_s and Payment_es [print "Sorry this scenario is not yet contemplated"]
+
+  tick
+end
 
 to update-display
   ask patches [
@@ -98,11 +119,9 @@ to view_attitude
 end
 
 to change1
-
-  ;ask patches[
   ifelse any? patches with [w_attitude = 1 and luc-patch != 1] [
    ask patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and w_attitude = 1 and  MBBR-patch = 2] [
-    if any? patches in-radius 2 with [ luc-patch = 1 ]
+    if any? patches in-radius 4 with [ luc-patch = 1 ]
     [set luc-patch 1]
     ]
   if any? patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5  and w_attitude = 1 and MBBR-patch = 2]
@@ -110,19 +129,25 @@ to change1
    ask n-of 1 patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and w_attitude = 1 and  MBBR-patch = 2]
       [set luc-patch 1]
    ]
-   ]
+   ask patches with [luc-patch = 3 ] [
+    if any? patches in-radius 1 with [ luc-patch = 1 and luc-patch != 3 ]
+      [set luc-patch 4];forest degradation in the vicinity of crops
+  ]
+  ]
 
-  [ask patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and  MBBR-patch = 2] [
-   if any? patches in-radius 1 with [ luc-patch = 1 ]
-   [set luc-patch 1]
-    ]
-
-  if  any? patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2]
+  [ if  any? patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and slope-patch < 70]
    [
-   ask n-of 1 patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2]
+   ask n-of 1 patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and slope-patch < 70]
       [set luc-patch 1]
    ]
+
+   ask patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and  MBBR-patch = 2 and slope-patch < 70] [
+   if any? patches in-radius 2 with [ luc-patch = 1 ]
+   [set luc-patch 1]
+    ]
   ]
+
+
 
   ask patches with [luc-patch = 3 ] [
     if any? patches in-radius 1 with [ luc-patch = 1 ]
@@ -131,15 +156,118 @@ to change1
    ]
 
 
-  print count patches with [pcolor = 26]
+  ;print count patches with [pcolor = 26] count patches with [MBBR-patch = 2]
   update-display
-  ;]
 
-  ;]
-
-   ; Sowing random plots in areas susceptible to change
 end
 
+to change2
+  ifelse any? patches with [w_attitude = 1 and luc-patch != 1] [
+   ask patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and w_attitude = 1 and  MBBR-patch = 2] [
+    if any? patches in-radius 4 with [ luc-patch = 1 ]
+    [set luc-patch 1]
+    ]
+  if any? patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5  and w_attitude = 1 and MBBR-patch = 2]
+   [
+   ask n-of 1 patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and w_attitude = 1 and  MBBR-patch = 2]
+      [set luc-patch 1]
+
+   ask patches with [luc-patch = 3 ] [
+        if any? patches in-radius 1 with [ luc-patch = 1 and luc-patch != 3 ]
+        [set luc-patch 4];forest degradation in the vicinity of crops
+      ]
+   ]
+   ]
+
+  [ if  any? patches with [luc-patch = 2  or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and tenure-patch = 1 and slope-patch < 70]
+   [
+   ask n-of 1 patches with [luc-patch = 2 or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and tenure-patch = 1 and slope-patch < 70]
+      [set luc-patch 1]
+
+   ask patches with [luc-patch = 2 or luc-patch = 4 or luc-patch = 5 and  MBBR-patch = 2 and tenure-patch = 1 and slope-patch < 70] [
+   if any? patches in-radius 2 with [ luc-patch = 1 ]
+   [set luc-patch 1]
+    ]
+   ]
+  ;]
+
+
+   if  any? patches with [luc-patch = 2 or luc-patch = 3  or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and tenure-patch = 2 and slope-patch < 70]
+   [
+   ask n-of 1 patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and tenure-patch = 2 and slope-patch < 70]
+      [set luc-patch 1]
+
+   ask patches with [luc-patch = 2 or luc-patch = 3  or luc-patch = 4 or luc-patch = 5 and  MBBR-patch = 2 and tenure-patch = 2 and slope-patch < 70] [
+   if any? patches in-radius 2 with [ luc-patch = 1 ]
+   [set luc-patch 1]
+    ]
+   ]
+  ]
+
+
+  ;ask patches with [luc-patch = 3 ] [
+  ;  if any? patches in-radius 1 with [ luc-patch = 1 and luc-patch != 3 ]
+  ;  [set luc-patch 4];forest degradation in the vicinity of crops
+  ; ]
+
+
+  print count patches with [pcolor = 26]
+  update-display
+
+end
+
+to change3
+  ifelse any? patches with [w_attitude = 1 and luc-patch != 1] [
+   ask patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and w_attitude = 1 and  MBBR-patch = 2] [
+    if any? patches in-radius 8 with [ luc-patch = 1 ]
+    [set luc-patch 1]
+    ]
+  if any? patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5  and w_attitude = 1 and MBBR-patch = 2]
+   [
+   ask n-of 1 patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and w_attitude = 1 and  MBBR-patch = 2]
+      [set luc-patch 1]
+
+   ask patches with [luc-patch = 3 ] [
+        if any? patches in-radius 1 with [ luc-patch = 1 and luc-patch != 3 ]
+        [set luc-patch 4];forest degradation in the vicinity of crops
+      ]
+   ]
+   ]
+
+  [ if  any? patches with [luc-patch = 2  or luc-patch = 5  and MBBR-patch = 2 and tenure-patch = 1 and slope-patch < 70]
+   [
+   ask n-of 1 patches with [luc-patch = 2 or luc-patch = 5 and MBBR-patch = 2 and tenure-patch = 1 and slope-patch < 70]
+      [set luc-patch 4]
+
+   ask patches with [luc-patch = 2  or luc-patch = 5 and  MBBR-patch = 2 and tenure-patch = 1 and slope-patch < 70] [
+   if any? patches in-radius 1 with [ luc-patch = 4 ]
+   [set luc-patch 4]
+    ]
+  ]
+
+   if  any? patches with [luc-patch = 2 or luc-patch = 3  or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and tenure-patch = 2 and slope-patch < 70]
+   [
+   ask n-of 1 patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and MBBR-patch = 2 and tenure-patch = 2 and slope-patch < 70]
+      [set luc-patch 1]
+
+   ask patches with [luc-patch = 2 or luc-patch = 3  or luc-patch = 4 or luc-patch = 5 and  MBBR-patch = 2 and tenure-patch = 2 and slope-patch < 70] [
+   if any? patches in-radius 1 with [ luc-patch = 1 ]
+   [set luc-patch 1]
+    ]
+   ]
+  ]
+
+
+  ;ask patches with [luc-patch = 3 ] [
+  ;  if any? patches in-radius 1 with [ luc-patch = 1 and luc-patch != 3 ]
+  ;  [set luc-patch 4];forest degradation in the vicinity of crops
+  ; ]
+
+
+  ;print count patches with [pcolor = 26]
+  update-display
+
+end
 
 ;print count patches with [ any? neighbors with [ pcolor = 26 ] ]
 @#$#@#$#@
@@ -164,8 +292,8 @@ GRAPHICS-WINDOW
 100
 -250
 250
-0
-0
+1
+1
 1
 ticks
 40.0
@@ -240,32 +368,56 @@ NIL
 
 SWITCH
 0
-215
+240
 122
-248
+273
 Payment_es
 Payment_es
-1
+0
 1
 -1000
 
 PLOT
-455
+435
 50
-655
-200
-Area
+805
+330
+% distribution of area in the buffer zone
 NIL
 NIL
 0.0
 10.0
 0.0
-10.0
+100.0
 true
 true
 "" ""
 PENS
-"Avocado" 1.0 0 -817084 true "" "plot (count patches with [pcolor = 26] * 2500)"
+"Avocado" 1.0 0 -817084 true "" "plot ((count patches with [luc-patch = 1 ]/ count patches with [MBBR-patch = 2])* 100)"
+"Primary forest" 1.0 0 -8732573 true "" "plot ((count patches with [luc-patch = 3 ]/ count patches with [MBBR-patch = 2])* 100)"
+"Secondary forest" 1.0 0 -11085214 true "" "plot ((count patches with [luc-patch = 4 ]/ count patches with [MBBR-patch = 2])* 100)"
+"pen-3" 1.0 0 -987046 true "" "plot ((count patches with [luc-patch = 2 ]/ count patches with [MBBR-patch = 2])* 100)"
+
+SWITCH
+0
+330
+142
+363
+Payment_ag_s
+Payment_ag_s
+1
+1
+-1000
+
+TEXTBOX
+0
+205
+150
+231
+Payment for environmental services
+11
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
