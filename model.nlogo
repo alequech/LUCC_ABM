@@ -49,13 +49,13 @@ to load-data
   gis:apply-raster luc-data luc-patch
 
   ask patches [
-   if luc-patch = 1 [ set pcolor 26 ] ;Agricultura permanente
-   if luc-patch = 2 [ set pcolor 46 ] ;Agricultura temporal
-   if luc-patch = 3 [set pcolor 53] ;Bosque primario
-   if luc-patch = 4 [set pcolor 66] ;Bosque secundario
-   if luc-patch = 5 [set pcolor 115]  ;pastizal
-   if luc-patch = 6 [set pcolor 96] ;Agua
-   if luc-patch = 7 [set pcolor 5] ;urbano
+   if luc-patch = 1 [ set pcolor 26 ] ;Permanent agriculture (including irrigation)
+   if luc-patch = 2 [ set pcolor 46 ] ;Rainfed farming
+   if luc-patch = 3 [set pcolor 53] ;Primary forest
+   if luc-patch = 4 [set pcolor 66] ;Secondary forest
+   if luc-patch = 5 [set pcolor 115]  ;Grassland
+   if luc-patch = 6 [set pcolor 96] ;Water
+   if luc-patch = 7 [set pcolor 5] ;Urban
 
   ]
 end
@@ -81,6 +81,7 @@ to go
     [stop]
   ]
   if Payment_ag_s and not Payment_es [ change3
+    print "Scenario 3"
     if ticks > 30
     [stop]
   ]
@@ -95,10 +96,10 @@ to update-display
    if luc-patch = 1 [ set pcolor 26 ] ;Permanent agriculture (including irrigation)
    if luc-patch = 2 [ set pcolor 46 ] ;Rainfed farming
    if luc-patch = 3 [set pcolor 53] ;Primary forest
-   if luc-patch = 4 [set pcolor 66] ;Bosque secundario
-   if luc-patch = 5 [set pcolor 115] ;pastiza
-   if luc-patch = 6 [set pcolor 96] ;Agua
-   if luc-patch = 7 [set pcolor 5] ;urbano
+   if luc-patch = 4 [set pcolor 66] ;Secondary forest
+   if luc-patch = 5 [set pcolor 115] ;Grassland
+   if luc-patch = 6 [set pcolor 96] ;Water
+   if luc-patch = 7 [set pcolor 5] ;Urban
   ]
 end
 
@@ -121,7 +122,7 @@ end
 to change1
   ifelse any? patches with [w_attitude = 1 and luc-patch != 1] [
    ask patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and w_attitude = 1 and  MBBR-patch = 2] [
-    if any? patches in-radius 4 with [ luc-patch = 1 ]
+    if any? patches in-radius 8 with [ luc-patch = 1 ]
     [set luc-patch 1]
     ]
   if any? patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5  and w_attitude = 1 and MBBR-patch = 2]
@@ -164,7 +165,7 @@ end
 to change2
   ifelse any? patches with [w_attitude = 1 and luc-patch != 1] [
    ask patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5 and w_attitude = 1 and  MBBR-patch = 2] [
-    if any? patches in-radius 4 with [ luc-patch = 1 ]
+    if any? patches in-radius 8 with [ luc-patch = 1 ]
     [set luc-patch 1]
     ]
   if any? patches with [luc-patch = 2 or luc-patch = 3 or luc-patch = 4 or luc-patch = 5  and w_attitude = 1 and MBBR-patch = 2]
@@ -211,7 +212,7 @@ to change2
   ; ]
 
 
-  print count patches with [pcolor = 26]
+  ;print count patches with [pcolor = 26]
   update-display
 
 end
@@ -373,7 +374,7 @@ SWITCH
 273
 Payment_es
 Payment_es
-0
+1
 1
 -1000
 
@@ -396,7 +397,7 @@ PENS
 "Avocado" 1.0 0 -817084 true "" "plot ((count patches with [luc-patch = 1 ]/ count patches with [MBBR-patch = 2])* 100)"
 "Primary forest" 1.0 0 -8732573 true "" "plot ((count patches with [luc-patch = 3 ]/ count patches with [MBBR-patch = 2])* 100)"
 "Secondary forest" 1.0 0 -11085214 true "" "plot ((count patches with [luc-patch = 4 ]/ count patches with [MBBR-patch = 2])* 100)"
-"pen-3" 1.0 0 -987046 true "" "plot ((count patches with [luc-patch = 2 ]/ count patches with [MBBR-patch = 2])* 100)"
+"Rainfed farming" 1.0 0 -987046 true "" "plot ((count patches with [luc-patch = 2 ]/ count patches with [MBBR-patch = 2])* 100)"
 
 SWITCH
 0
@@ -415,6 +416,16 @@ TEXTBOX
 150
 231
 Payment for environmental services
+11
+0.0
+1
+
+TEXTBOX
+5
+295
+155
+321
+Payment for agroforestry services 
 11
 0.0
 1
@@ -761,7 +772,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
